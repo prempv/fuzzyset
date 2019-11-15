@@ -47,12 +47,13 @@ class FuzzySet(object):
 
     def __getitem__(self, value):
         lvalue = value.lower()
+        results = []
         result = self.exact_set.get(lvalue)
         if result and self.rel_sim_cutoff >= 1:
-            return [(1, result)]
+            results.append((1, result))
         for i in range(self.gram_size_upper, self.gram_size_lower - 1, -1):
-            results = self.__get(value, i)
-            if results is not None:
+            results.extend(self.__get(value, i))
+            if next((True for score, _ in results if score != 1), False):
                 return results
         raise KeyError(value)
 
@@ -80,9 +81,8 @@ class FuzzySet(object):
                        for _, matched in results[:50]]
             results.sort(reverse=True, key=operator.itemgetter(0))
 
-        score_threshold = results[0][0] * min(1.0, self.rel_sim_cutoff)
-        return [(score, self.exact_set[lval]) for score, lval in results
-                if score >= score_threshold]
+        #score_threshold = results[0][0] * min(1.0, self.rel_sim_cutoff)
+        return [(score, self.exact_set[lval]) for score, lval in results]
 
     def get(self, key, default=None):
         try:
